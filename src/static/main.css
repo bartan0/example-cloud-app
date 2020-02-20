@@ -1,0 +1,18 @@
+html {
+	font-size: 11pt;
+	font-family: sans-serif;
+}
+
+
+label {
+	display: block;
+}
+
+
+.window-placeholder {
+	width: 320px;
+	height: 240px;
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-image: url('https://placeimg.com/640/480/nature');
+}

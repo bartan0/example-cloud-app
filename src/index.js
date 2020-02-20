@@ -10,13 +10,7 @@ app.set('view engine', 'ejs')
 app.set('views', resolve(__dirname, 'views'))
 
 app
-	.get('/', (req, res) => {
-		res.redirect('/example')
-	})
-	.get('/:param', (req, res) => {
-		res.render('index', {
-			param: req.params.param
-		})
-	})
+	.use('/static', express.static(resolve(__dirname, 'static')))
+	.get('/', (req, res) => res.render('main'))
 
 	.listen(config.PORT)

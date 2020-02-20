@@ -1,0 +1,29 @@
+<%- include('header') -%>
+
+<main>
+	<form action="/">
+		<label>
+			URL:
+			<input
+				type="text"
+				name="url"
+				placeholder="http://www.example.com"
+			>
+		</label>
+		<label>
+			E-mail:
+			<input
+				type="text"
+				name="email"
+				placeholder="user@example.com"
+			>
+		</label>
+
+		<div class="window-placeholder"></div>
+
+		<button>Save</button>
+		<button>Send</button>
+	</form>
+</main>
+
+<%- include('footer') -%>
