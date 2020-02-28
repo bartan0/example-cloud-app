@@ -1,0 +1,109 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+
+from getopt import GetoptError, gnu_getopt
+from pathlib import Path
+from importlib import import_module
+
+
+PROJECT_NAME = 'studies-cloud-app'
+SCRIPTS_DIR = 'scripts'
+
+
+class Context:
+
+	def __init__ (config):
+		pass
+
+	def execute (self, cmd, args = [], *,
+		cwd = '.',
+		env = {}
+	):
+		if not os.fork():
+			os.chdir(cwd)
+			os.execvpe(cmd, [ cmd, *args ], {
+				**os.environ,
+				**env
+			})
+
+		pid, res = os.wait()
+
+		status = res / 0xff
+		signal = res % 0xff
+
+		if signal:
+			raise RuntimeError('killed-by-signal', cmd, signal)
+
+		return status
+
+
+def configure ():
+	config = {}
+
+	opts, args = gnu_getopt(sys.argv[1:], '+hV', [
+		'help',
+		'version'
+	])
+
+	handlers = {
+		'help': lambda v: config.update(help = True),
+		'version': lambda v: config.update(version = True)
+	}
+
+	options_handlers = {
+		'-h': 'help',
+		'-V': 'version',
+		'--help': 'help',
+		'--version': 'version'
+	}
+
+	for opt, val in opts:
+		handlers[options_handlers[opt]](val)
+
+	return config, args
+
+
+def help ():
+	print('HELP')
+
+
+if __name__ == '__main__':
+	try:
+		config, args = configure()
+
+		p = Path().absolute()
+
+		while not (p / '.git').is_dir():
+			if p.parent == p:
+				raise RuntimeError('not-git-subdir')
+
+			p = p.parent
+
+		os.chdir(p)
+
+		if not args:
+			if not config.get('help'):
+				raise RuntimeError('no-command')
+
+			help()
+
+		cmd, *args = args
+
+		mod = import_module('.'.join([ SCRIPTS_DIR, cmd ]))
+
+		if config.get('help'):
+			mod.help()
+
+		context = Context()
+
+		mod.run(context, *args, **config)
+
+	except (
+		GetoptError,
+		ImportError,
+		RuntimeError
+	) as err:
+		print('Error:', err, file = sys.stderr)
+		sys.exit(1)
