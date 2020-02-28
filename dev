@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
 
-import sys
+import json
 import os
+import sys
 
 from getopt import GetoptError, gnu_getopt
 from pathlib import Path
 from importlib import import_module
 
 
-PROJECT_NAME = 'studies-cloud-app'
 SCRIPTS_DIR = 'scripts'
+CONFIG_FILE = './config.dev.json'
 
 
 class Context:
 
-	def __init__ (config):
-		pass
+	def __init__ (self, config):
+		with open(CONFIG_FILE) as f:
+			for k, v in json.load(f).items():
+				self.__dict__[k] = v
+
 
 	def execute (self, cmd, args = [], *,
 		cwd = '.',
@@ -30,8 +34,8 @@ class Context:
 
 		pid, res = os.wait()
 
-		status = res / 0xff
-		signal = res % 0xff
+		status = (res >> 8) & 0xff
+		signal = res & 0xff
 
 		if signal:
 			raise RuntimeError('killed-by-signal', cmd, signal)
@@ -96,9 +100,9 @@ if __name__ == '__main__':
 		if config.get('help'):
 			mod.help()
 
-		context = Context()
+		context = Context(config)
 
-		mod.run(context, *args, **config)
+		sys.exit(mod.run(context, *args, **config))
 
 	except (
 		GetoptError,
