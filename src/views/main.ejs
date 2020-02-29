@@ -9,6 +9,9 @@
 				name="url"
 				placeholder="http://www.example.com"
 			>
+			<% if (locals.errors && locals.errors.url) { %>
+				<div class="form-error">URL is required</div>
+			<% } %>
 		</label>
 		<label>
 			E-mail:
@@ -19,9 +22,9 @@
 			>
 		</label>
 
-		<% if (urls) { %>
+		<% if (locals.urls) { %>
 			<ul>
-				<% urls.forEach(({ id, url }) => { %>
+				<% locals.urls.forEach(({ id, url }) => { %>
 					<li><%= url %></li>
 				<% }) %>
 			</ul>

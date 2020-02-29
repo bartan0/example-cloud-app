@@ -62,6 +62,9 @@ Server._init = function () {
 			res,
 			next
 		) => {
+			if (!url)
+				return res.render('main', { errors: { url: 'nonzero' } })
+
 			const sqlReq = new SQLRequest(
 				'INSERT INTO urls(url) OUTPUT INSERTED.id VALUES (@url)',
 				err => err ? next(err) : res.redirect('/')
@@ -73,6 +76,12 @@ Server._init = function () {
 			})
 
 			db.execSql(sqlReq)
+		})
+
+		.use((err, req, res, next) => {
+			console.error('WWW Server', 'Toplevel', err.toString())
+
+			res.sendStatus(500)
 		})
 
 	return this
