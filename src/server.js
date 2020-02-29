@@ -1,4 +1,10 @@
 const express = require('express')
+const {
+	Request: SQLRequest,
+	TYPES: SQLType
+} = require('tedious')
+
+const SQLServer = require('./sqlserver')
 
 
 const Server = {
@@ -21,7 +27,53 @@ Server._init = function () {
 
 	this.$.app = app
 		.use('/static', express.static(this.STATIC_ROOT))
-		.get('/', (req, res) => res.render('main'))
+		.use(express.urlencoded({ extended: true }))
+
+		.use((req, res, next) => {
+			req.context = { db: SQLServer.getConnection() }
+			next()
+		})
+
+
+		.get('/', (
+			{ context: { db } },
+			res,
+			next
+		) => {
+			let err
+
+			const urls = []
+			const sqlReq = new SQLRequest(
+				'SELECT id, url FROM urls',
+				e => err = e
+			)
+
+			sqlReq.on('row', ([ { value: id }, { value: url } ]) => urls.push({ id, url }))
+			sqlReq.on('requestCompleted', () => res.render('main', { urls }))
+
+			db.execSql(sqlReq)
+		})
+
+		.post('/', (
+			{
+				body: { url },
+				context: { db }
+			},
+			res,
+			next
+		) => {
+			const sqlReq = new SQLRequest(
+				'INSERT INTO urls(url) OUTPUT INSERTED.id VALUES (@url)',
+				err => err ? next(err) : res.redirect('/')
+			)
+
+			sqlReq.addParameter('url', SQLType.NVarChar, url)
+			sqlReq.on('row', ([ { value: id } ]) => {
+				console.log('URL inserted', id)
+			})
+
+			db.execSql(sqlReq)
+		})
 
 	return this
 }

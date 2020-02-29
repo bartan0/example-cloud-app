@@ -18,12 +18,12 @@ SQLServer = {
 
 	TABLES: [
 		[ 'users', `CREATE TABLE users (
-			id INT,
+			id INT IDENTITY,
 			email NVARCHAR(256),
 			auth_hash NVARCHAR(256)
 		)` ],
 		[ 'urls', `CREATE TABLE urls (
-			id INT,
+			id INT IDENTITY,
 			url NVARCHAR(1024)
 		)` ]
 	],
@@ -102,6 +102,11 @@ SQLServer.disconnect = function () {
 		this.$.conn.close()
 		this.$.conn = null
 	})
+}
+
+
+SQLServer.getConnection = function () {
+	return this.$.conn
 }
 
 
