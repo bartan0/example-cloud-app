@@ -69,40 +69,55 @@ def configure ():
 	return config, args
 
 
-def help ():
+def help (mod = None):
 	print('HELP')
+
+	if mod:
+		print(mod.help())
+
+
+def cd_git ():
+	p = Path().absolute()
+
+	while not (p / '.git').is_dir():
+		if p.parent == p:
+			raise RuntimeError('not-git-subdir')
+
+		p = p.parent
+
+	os.chdir(p)
+
+
+def run_command (cmd, args, config):
+	context = Context(config)
+	p = Path(SCRIPTS_DIR, cmd + '.sh')
+
+	if p.is_file():
+		env = {}
+
+		if (config.get('help')):
+			env['HELP'] = '1'
+
+		return context.execute('bash', [ str(p), *args ], env = env)
+
+	mod = import_module('.'.join([ SCRIPTS_DIR, cmd ]))
+
+	if config.get('help'):
+		return help(mod)
+
+	return mod.run(context, *args, **config)
 
 
 if __name__ == '__main__':
 	try:
 		config, args = configure()
 
-		p = Path().absolute()
-
-		while not (p / '.git').is_dir():
-			if p.parent == p:
-				raise RuntimeError('not-git-subdir')
-
-			p = p.parent
-
-		os.chdir(p)
+		cd_git()
 
 		if not args:
-			if not config.get('help'):
-				raise RuntimeError('no-command')
-
 			help()
 
-		cmd, *args = args
-
-		mod = import_module('.'.join([ SCRIPTS_DIR, cmd ]))
-
-		if config.get('help'):
-			mod.help()
-
-		context = Context(config)
-
-		sys.exit(mod.run(context, *args, **config))
+		sys.exit(run_command(args[0], args[1:], config))
 
 	except (
 		GetoptError,
