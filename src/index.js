@@ -8,7 +8,7 @@ require('./sqlserver')
 
 const init = async () => {
 	try {
-		await SQLServer.connect()
+		// await SQLServer.connect()
 		console.log('SQL Server: connected')
 
 		await Server.start()
