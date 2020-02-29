@@ -1,3 +1,4 @@
+const Logger = require('./logger')
 const Server = require('./server')
 const SQLServer = require('./sqlserver')
 
@@ -15,6 +16,7 @@ const init = async () => {
 
 		await Server.stop()
 		await SQLServer.disconnect()
+		await Logger.close()
 	}
 }
 
