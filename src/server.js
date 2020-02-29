@@ -1,17 +1,41 @@
-const Config = {
+Server = {
 	PORT: 8080,
 	STATIC_ROOT: './static',
-	VIEWS_ROOT: './views'
+	VIEWS_ROOT: './views',
+
+	$: {
+		app: null,
+		server: null
+	}
 }
 
 
-const server = express()
+Server._init = function () {
+	const app = express()
 
-server.set('view engine', 'ejs')
-server.set('views', Config.VIEWS_ROOT)
+	app.set('view engine', 'ejs')
+	app.set('views', this.VIEWS_ROOT)
 
-server
-	.use('/static', express.static(Config.STATIC_ROOT))
-	.get('/', (req, res) => res.render('main'))
+	this.$.app = app
+		.use('/static', express.static(this.STATIC_ROOT))
+		.get('/', (req, res) => res.render('main'))
+}
 
-	.listen(Config.PORT)
+
+Server.start = function () {
+	this.$.server = this.$.app.listen(this.PORT)
+}
+
+
+Server.stop = function () {
+	if (!this.$.server)
+		return
+
+	this.$.app = null
+	this.$.server.close(() => {
+		this.$.server = null
+	})
+}
+
+
+Server._init()
