@@ -1,7 +1,10 @@
-Server = {
-	PORT: 8080,
-	STATIC_ROOT: './static',
-	VIEWS_ROOT: './views',
+const express = require('express')
+
+
+const Server = {
+	PORT: process.env.PORT || 8080,
+	STATIC_ROOT: process.env.HTTP_ROOT_STATIC || './static',
+	VIEWS_ROOT: process.env.HTTP_ROOT_VIEWS || './views',
 
 	$: {
 		app: null,
@@ -19,6 +22,8 @@ Server._init = function () {
 	this.$.app = app
 		.use('/static', express.static(this.STATIC_ROOT))
 		.get('/', (req, res) => res.render('main'))
+
+	return this
 }
 
 
@@ -38,4 +43,4 @@ Server.stop = function () {
 }
 
 
-Server._init()
+module.exports = Server._init()

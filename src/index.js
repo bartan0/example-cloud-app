@@ -1,14 +1,10 @@
-path = require('path')
-express = require('express')
-tedious = require('tedious')
-
-require('./server')
-require('./sqlserver')
+const Server = require('./server')
+const SQLServer = require('./sqlserver')
 
 
 const init = async () => {
 	try {
-		// await SQLServer.connect()
+		await SQLServer.connect()
 		console.log('SQL Server: connected')
 
 		await Server.start()

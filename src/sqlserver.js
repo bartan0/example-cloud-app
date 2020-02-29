@@ -1,29 +1,4 @@
-const { Connection, Request } = tedious
-
-
-SQLServer = {
-	DBNAME: process.env['DB_NAME'] || 'develop',
-	HOST: process.env['DB_HOST'] || 'localhost',
-	USERNAME: process.env['DB_USERNAME'] || 'SA',
-	PASSWORD: process.env['DB_PASSWORD'] || '',
-
-	$: {
-		conn: null
-	}
-}
-
-
-const tables = [
-	[ 'users', `CREATE TABLE users (
-		id INT,
-		email NVARCHAR(256),
-		auth_hash NVARCHAR(256)
-	)` ],
-	[ 'urls', `CREATE TABLE urls (
-		id INT,
-		url NVARCHAR(1024)
-	)` ]
-]
+const { Connection, Request } = require('tedious')
 
 
 const sqlIfNoTable = ([ name, sql ]) => `
@@ -32,6 +7,30 @@ const sqlIfNoTable = ([ name, sql ]) => `
 		${sql}
 	END
 `
+
+
+SQLServer = {
+	DBNAME: process.env['DB_NAME'] || 'develop',
+	HOST: process.env['DB_HOST'] || 'localhost',
+	USERNAME: process.env['DB_USERNAME'] || 'SA',
+	PASSWORD: process.env['DB_PASSWORD'] || '',
+
+	TABLES: [
+		[ 'users', `CREATE TABLE users (
+			id INT,
+			email NVARCHAR(256),
+			auth_hash NVARCHAR(256)
+		)` ],
+		[ 'urls', `CREATE TABLE urls (
+			id INT,
+			url NVARCHAR(1024)
+		)` ]
+	],
+
+	$: {
+		conn: null
+	}
+}
 
 
 SQLServer._createDatabase = function () {
@@ -57,7 +56,7 @@ SQLServer._useDatabase = function () {
 SQLServer._createTables = function () {
 	return new Promise((resolve, reject) => this.$.conn.execSql(
 		new Request(
-			tables.map(spec => sqlIfNoTable(spec)).join('\n'),
+			this.TABLES.map(spec => sqlIfNoTable(spec)).join('\n'),
 			err => err ? reject(err) : resolve()
 		)
 	))
@@ -101,3 +100,6 @@ SQLServer.disconnect = function () {
 		this.$.conn = null
 	})
 }
+
+
+module.exports = SQLServer

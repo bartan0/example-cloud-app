@@ -1,8 +1,9 @@
 def run (ctx, cmd = None, *args, **config):
 	ctx.execute('node', '.',
-		cwd = './src',
 		env = {
-			'DB_PASSWORD': ctx.DB_PASSWORD
+			'DB_PASSWORD': ctx.DB_PASSWORD,
+			'HTTP_ROOT_STATIC': './src/static',
+			'HTTP_ROOT_VIEWS': './src/views'
 		}
 	)
 
