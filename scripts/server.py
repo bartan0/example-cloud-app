@@ -3,7 +3,8 @@ def run (ctx, cmd = None, *args, **config):
 		env = {
 			'DB_PASSWORD': ctx.DB_PASSWORD,
 			'HTTP_ROOT_STATIC': './src/static',
-			'HTTP_ROOT_VIEWS': './src/views'
+			'HTTP_ROOT_VIEWS': './src/views',
+			'DB_AUTOCREATE': 'true'
 		}
 	)
 

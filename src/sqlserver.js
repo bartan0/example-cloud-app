@@ -10,10 +10,11 @@ const sqlIfNoTable = ([ name, sql ]) => `
 
 
 SQLServer = {
+	DB_AUTOCREATE: !!process.env['DB_AUTOCREATE'],
 	DBNAME: process.env['DB_NAME'] || 'develop',
 	HOST: process.env['DB_HOST'] || 'localhost',
-	USERNAME: process.env['DB_USERNAME'] || 'SA',
 	PASSWORD: process.env['DB_PASSWORD'] || '',
+	USERNAME: process.env['DB_USERNAME'] || 'SA',
 
 	TABLES: [
 		[ 'users', `CREATE TABLE users (
@@ -67,7 +68,9 @@ SQLServer.connect = function () {
 	return new Promise((resolve, reject) => {
 		this.$.conn = new Connection({
 			server: this.HOST,
-			options: {},
+			options: {
+				database: this.DB_AUTOCREATE ? undefined : this.DBNAME
+			},
 			authentication: {
 				type: 'default',
 				options: {
@@ -84,8 +87,8 @@ SQLServer.connect = function () {
 				reject(err)
 			})
 	})
-		.then(() => this._createDatabase())
-		.then(() => this._useDatabase())
+		.then(() => this.DB_AUTOCREATE ? this._createDatabase() : null)
+		.then(() => this.DB_AUTOCREATE ? this._useDatabase() : null)
 		.then(() => this._createTables())
 }
 

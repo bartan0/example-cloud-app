@@ -2,7 +2,7 @@ const { createSocket } = require('dgram')
 
 
 const Logger = {
-	HOST: process.env.LOG_HOST || 'localhost',
+	HOST: process.env.LOG_HOST || '',
 	PORT: process.env.LOG_PORT || '9000',
 	NAME: process.env.LOG_NAME || '',
 
@@ -21,6 +21,9 @@ const LogLevel = {
 
 Logger._init = function () {
 	return new Promise((resolve, reject) => {
+		if (!this.HOST)
+			return resolve()
+
 		const sock = createSocket('udp4')
 
 		sock.connect(this.PORT, this.HOST, err => {
