@@ -1,7 +1,10 @@
 <%- include('header') -%>
 
 <main>
-	<form method="POST" action="/">
+	<form method="POST">
+		<button name="action" value="add">Save</button>
+		<!-- button>Send</button -->
+
 		<label>
 			URL:
 			<input
@@ -25,15 +28,20 @@
 		<% if (urls.length) { %>
 			<ul>
 				<% urls.forEach(({ id, url }) => { %>
-					<li><%= url %></li>
+					<li>
+						<button
+							name="action"
+							value="remove:<%= id %>"
+						>
+							X
+						</button>
+						<%= url %>
+					</li>
 				<% }) %>
 			</ul>
 		<% } %>
 
 		<div class="window-placeholder"></div>
-
-		<button>Save</button>
-		<button>Send</button>
 	</form>
 </main>
 

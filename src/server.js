@@ -37,7 +37,8 @@ Server._init = function () {
 
 		.use('/', (
 			{
-				body: { url },
+				params: { urlId },
+				body: { action: action_arg, url },
 				context: { db },
 				method
 			},
@@ -48,6 +49,9 @@ Server._init = function () {
 				urls: [],
 				errors: {}
 			}
+			const [ _, action, actionArg ]  = /^([a-z]+)(?::(.*))?$/.exec(action_arg) || []
+			const sqlGetAll = 'SELECT id, url FROM urls'
+
 			let sqlParts = []
 			let sqlReq = null
 			let err
@@ -55,32 +59,49 @@ Server._init = function () {
 			switch (method) {
 
 				case 'GET':
-					sqlReq = new SQLRequest(
-						'SELECT id, url FROM urls',
-						e => err = e
-					)
-
+					sqlReq = new SQLRequest(sqlGetAll, e => err = e)
 					sqlReq.on('row', ([ { value: id }, { value: url } ]) => viewModel.urls.push({ id, url }))
 					break
 
 				case 'POST':
-					if (url)
-						sqlParts.push(`
-							IF NOT EXISTS (SELECT url FROM urls WHERE url = @url)
-								INSERT INTO urls(url) VALUES (@url)
-						`)
-					else
-						viewModel.errors.url = 'nonzero'
+					switch (action) {
+						case 'add':
+							if (url)
+								sqlParts.push(`
+									IF NOT EXISTS (SELECT url FROM urls WHERE url = @url)
+										INSERT INTO urls(url) VALUES (@url)
+								`)
+							else
+								viewModel.errors.url = 'nonzero'
 
-					sqlParts.push('SELECT id, url FROM urls')
+							sqlParts.push(sqlGetAll)
 
-					sqlReq = new SQLRequest(sqlParts.join('\n'), e => err = e)
+							sqlReq = new SQLRequest(sqlParts.join('\n'), e => err = e)
 
-					if (url)
-						sqlReq.addParameter('url', SQLType.NVarChar, url)
+							if (url)
+								sqlReq.addParameter('url', SQLType.NVarChar, url)
 
-					sqlReq.on('row', ([ { value: id }, { value: url } ]) => viewModel.urls.push({ id, url }))
+							sqlReq.on('row', ([ { value: id }, { value: url } ]) => viewModel.urls.push({ id, url }))
+							break
+
+						case 'remove':
+							sqlReq = new SQLRequest([
+								'DELETE FROM urls WHERE id = @id',
+								sqlGetAll,
+							].join('\n'), e => err = e)
+
+							sqlReq.addParameter('id', SQLType.Int, actionArg)
+							sqlReq.on('row', ([ { value: id }, { value: url } ]) => viewModel.urls.push({ id, url }))
+							break
+
+						default:
+							next('wrong-action')
+					}
+
 					break
+
+				default:
+					next('wrong-method')
 			}
 
 			if (sqlReq) {
