@@ -24,7 +24,9 @@ SQLServer = {
 		)` ],
 		[ 'urls', `CREATE TABLE urls (
 			id INT IDENTITY,
-			url NVARCHAR(1024) CONSTRAINT nonzero CHECK (LEN(url) > 0)
+			url NVARCHAR(1024) UNIQUE CHECK (LEN(url) > 0),
+
+			CONSTRAINT url_unique UNIQUE (url)
 		)` ]
 	],
 

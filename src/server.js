@@ -35,48 +35,60 @@ Server._init = function () {
 		})
 
 
-		.get('/', (
-			{ context: { db } },
-			res,
-			next
-		) => {
-			let err
-
-			const urls = []
-			const sqlReq = new SQLRequest(
-				'SELECT id, url FROM urls',
-				e => err = e
-			)
-
-			sqlReq.on('row', ([ { value: id }, { value: url } ]) => urls.push({ id, url }))
-			sqlReq.on('requestCompleted', () => res.render('main', { urls }))
-
-			db.execSql(sqlReq)
-		})
-
-		.post('/', (
+		.use('/', (
 			{
 				body: { url },
-				context: { db }
+				context: { db },
+				method
 			},
 			res,
 			next
 		) => {
-			if (!url)
-				return res.render('main', { errors: { url: 'nonzero' } })
+			const viewModel = {
+				urls: [],
+				errors: {}
+			}
+			let sqlParts = []
+			let sqlReq = null
+			let err
 
-			const sqlReq = new SQLRequest(
-				'INSERT INTO urls(url) OUTPUT INSERTED.id VALUES (@url)',
-				err => err ? next(err) : res.redirect('/')
-			)
+			switch (method) {
 
-			sqlReq.addParameter('url', SQLType.NVarChar, url)
-			sqlReq.on('row', ([ { value: id } ]) => {
-				console.log('URL inserted', id)
-			})
+				case 'GET':
+					sqlReq = new SQLRequest(
+						'SELECT id, url FROM urls',
+						e => err = e
+					)
 
-			db.execSql(sqlReq)
+					sqlReq.on('row', ([ { value: id }, { value: url } ]) => viewModel.urls.push({ id, url }))
+					break
+
+				case 'POST':
+					if (url)
+						sqlParts.push(`
+							IF NOT EXISTS (SELECT url FROM urls WHERE url = @url)
+								INSERT INTO urls(url) VALUES (@url)
+						`)
+					else
+						viewModel.errors.url = 'nonzero'
+
+					sqlParts.push('SELECT id, url FROM urls')
+
+					sqlReq = new SQLRequest(sqlParts.join('\n'), e => err = e)
+
+					if (url)
+						sqlReq.addParameter('url', SQLType.NVarChar, url)
+
+					sqlReq.on('row', ([ { value: id }, { value: url } ]) => viewModel.urls.push({ id, url }))
+					break
+			}
+
+			if (sqlReq) {
+				sqlReq.on('requestCompleted', () => err ? next(err) : res.render('main', viewModel))
+				db.execSql(sqlReq)
+			}
 		})
+
 
 		.use((err, req, res, next) => {
 			console.error('WWW Server', 'Toplevel', err.toString())
