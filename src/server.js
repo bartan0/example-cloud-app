@@ -1,3 +1,5 @@
+const { resolve } = require('path')
+const ejs = require('ejs')
 const express = require('express')
 const {
 	Request: SQLRequest,
@@ -6,6 +8,7 @@ const {
 
 const SQLServer = require('./sqlserver')
 const RSS = require('./rss')
+const Mail = require('./mail')
 
 
 const Server = {
@@ -31,15 +34,18 @@ Server._init = function () {
 		.use(express.urlencoded({ extended: true }))
 
 		.use((req, res, next) => {
-			req.context = { db: SQLServer.getConnection() }
+			req.context = {
+				db: SQLServer.getConnection(),
+				mail: Mail()
+			}
 			next()
 		})
 
 		.use('/', (
 			{
 				params: { urlId },
-				body: { action: action_arg, url },
-				context: { db },
+				body: { action: action_arg, url, email },
+				context: { db, mail },
 				method
 			},
 			res,
@@ -120,10 +126,19 @@ Server._init = function () {
 						case 'send':
 							Promise.all(viewModel.urls.map(({ url }) =>
 								RSS.getRSS(url)
-									.catch(err => console.error(err))
+									.catch(err => console.error('RSS.getRSS', err))
 							))
 								.then(rss => viewModel.rss = rss.filter(Boolean))
-								.then(() => res.render('main', viewModel))
+								.then(() => {
+									res.render('main', viewModel)
+									ejs.renderFile(resolve(this.VIEWS_ROOT, 'rss.ejs'), { rss: viewModel.rss }, (err, content) => {
+										if (err)
+											return console.error('ejs.renderFile', err)
+
+										mail.send(email, 'Your RSS feeds', content)
+											.catch(err => console.error('Mail.send', err))
+									})
+								})
 							break
 
 						default:
