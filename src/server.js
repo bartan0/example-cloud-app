@@ -5,6 +5,7 @@ const {
 } = require('tedious')
 
 const SQLServer = require('./sqlserver')
+const RSS = require('./rss')
 
 
 const Server = {
@@ -34,7 +35,6 @@ Server._init = function () {
 			next()
 		})
 
-
 		.use('/', (
 			{
 				params: { urlId },
@@ -47,7 +47,8 @@ Server._init = function () {
 		) => {
 			const viewModel = {
 				urls: [],
-				errors: {}
+				errors: {},
+				rss: []
 			}
 			const [ _, action, actionArg ]  = /^([a-z]+)(?::(.*))?$/.exec(action_arg) || []
 			const sqlGetAll = 'SELECT id, url FROM urls'
@@ -94,6 +95,11 @@ Server._init = function () {
 							sqlReq.on('row', ([ { value: id }, { value: url } ]) => viewModel.urls.push({ id, url }))
 							break
 
+						case 'send':
+							sqlReq = new SQLRequest(sqlGetAll, e => err = e)
+							sqlReq.on('row', ([ { value: id }, { value: url } ]) => viewModel.urls.push({ id, url }))
+							break
+
 						default:
 							next('wrong-action')
 					}
@@ -105,7 +111,25 @@ Server._init = function () {
 			}
 
 			if (sqlReq) {
-				sqlReq.on('requestCompleted', () => err ? next(err) : res.render('main', viewModel))
+				sqlReq.on('requestCompleted', () => {
+					if (err)
+						return next(err)
+
+					switch (action) {
+
+						case 'send':
+							Promise.all(viewModel.urls.map(({ url }) =>
+								RSS.getRSS(url)
+									.catch(err => console.error(err))
+							))
+								.then(rss => viewModel.rss = rss.filter(Boolean))
+								.then(() => res.render('main', viewModel))
+							break
+
+						default:
+							res.render('main', viewModel)
+					}
+				})
 				db.execSql(sqlReq)
 			}
 		})

@@ -3,7 +3,7 @@
 <main>
 	<form method="POST">
 		<button name="action" value="add">Save</button>
-		<!-- button>Send</button -->
+		<button name="action" value="send">Send</button>
 
 		<label>
 			URL:
@@ -41,7 +41,9 @@
 			</ul>
 		<% } %>
 
-		<div class="window-placeholder"></div>
+		<div class="rss">
+			<%- include('rss', { rss }) %>
+		</div>
 	</form>
 </main>
 

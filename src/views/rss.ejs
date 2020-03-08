@@ -1,0 +1,17 @@
+<%
+	let n = rss.length
+
+	for (const { title, items } of rss) {
+%>
+	<h2><%= title %></h2>
+
+	<% for (const { title, description } of items) { %>
+		<h3><%= title %></h3>
+
+		<div><%- description %></div>
+	<% } %>
+
+	<% if (--n) { %>
+		<hr>
+	<% } %>
+<% } %>

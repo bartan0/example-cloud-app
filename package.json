@@ -5,6 +5,7 @@
 	"dependencies": {
 		"ejs": "^3.0.1",
 		"express": "^4.17.1",
-		"tedious": "^8.0.1"
+		"tedious": "^8.0.1",
+		"xml2js": "^0.4.23"
 	}
 }
